@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
 from relevanceai.resources.tasks import Tasks
-from relevanceai.types.knowledge import Metadata
-from relevanceai.types.task import TaskMetadata
 
 class TestTasks:
     @pytest.fixture
@@ -17,28 +15,28 @@ class TestTasks:
 
     def test_get_metadata_without_metadata(self, tasks):
         """Test getting metadata when no metadata exists in response."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"metadata": None}
+        mock_response = {"metadata": None}
         tasks._get = MagicMock(return_value=mock_response)
 
         result = tasks.get_metadata("conversation-123")
 
         tasks._get.assert_called_once_with(
-            "knowledge/sets/conversation-123/get_metadata"
+            "knowledge/sets/conversation-123/get_metadata",
+            cast_to=dict
         )
         assert isinstance(result, dict)
         assert result == {}
 
     def test_get_metadata_empty_response(self, tasks):
         """Test getting metadata with empty response."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {}
+        mock_response = {}
         tasks._get = MagicMock(return_value=mock_response)
 
         result = tasks.get_metadata("conversation-123")
 
         tasks._get.assert_called_once_with(
-            "knowledge/sets/conversation-123/get_metadata"
+            "knowledge/sets/conversation-123/get_metadata",
+            cast_to=dict
         )
         assert isinstance(result, dict)
         assert result == {}
