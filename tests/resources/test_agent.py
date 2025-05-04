@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from relevanceai.resources.agent import Agent
-from relevanceai.types.agent import AgentType
-from relevanceai.types.task import TriggeredTask, ScheduledActionTrigger
 
 
 class TestAgent:

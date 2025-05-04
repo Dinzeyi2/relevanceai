@@ -1,4 +1,3 @@
-import pytest
 from relevanceai import RelevanceAI
 
 class TestRelevanceAI:

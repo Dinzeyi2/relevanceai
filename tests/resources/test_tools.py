@@ -1,6 +1,5 @@
 import pytest
 import json
-import uuid
 from unittest.mock import MagicMock, patch
 from relevanceai.resources.tools import ToolsManager
 from relevanceai.resources.tool import Tool

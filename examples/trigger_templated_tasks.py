@@ -5,7 +5,6 @@ Trigger templated tasks. (from .csv file)
 
 import time 
 import csv
-import time 
 from textwrap import dedent
 
 from relevanceai import RelevanceAI

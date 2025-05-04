@@ -1,9 +1,6 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from relevanceai.resources.tool import Tool
-from relevanceai.types.tool import ToolType
-from relevanceai.types.params import ParamsBase
-from relevanceai.types.transformations import TransformationBase
 
 class TestTool:
     @pytest.fixture

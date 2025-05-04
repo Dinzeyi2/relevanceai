@@ -40,7 +40,7 @@ class AgentsManager(SyncAPIResource):
         for agent in existing_agents:
             if agent.get("metadata", {}).get("name") == name:
                 raise ValueError(f"Agent with name '{name}' already exists!")
-        path = f"/agents/upsert"
+        path = "/agents/upsert"
         body = {
             k: v
             for k, v in {
@@ -63,7 +63,7 @@ class AgentsManager(SyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[int] = None,
     ) -> Agent:
-        path = f"/agents/upsert"
+        path = "/agents/upsert"
         body = {
             k: v
             for k, v in {
@@ -121,7 +121,7 @@ class AsyncAgentsManager(AsyncAPIResource):
         model: Optional[str] = None,
         temperature: Optional[int] = None,
     ) -> AsyncAgent:
-        path = f"/agents/upsert"
+        path = "/agents/upsert"
         body = {
             k: v
             for k, v in {

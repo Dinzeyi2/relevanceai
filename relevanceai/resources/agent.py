@@ -118,7 +118,7 @@ class Agent(SyncAPIResource):
         return None
 
     def trigger_task_from_action(self, conversation_id: str, action: str, action_request_id: str):
-        path = f"agents/trigger"
+        path = "agents/trigger"
         body = {
             "agent_id": self.agent_id,
             "conversation_id": conversation_id,
@@ -179,7 +179,7 @@ class Agent(SyncAPIResource):
         self,
         conversation_id: str,
     ) -> dict:
-        path = f"agents/conversations/studios/list"
+        path = "agents/conversations/studios/list"
         params = {
             "conversation_id": conversation_id,
             "agent_id": self.agent_id,
@@ -444,7 +444,7 @@ class AsyncAgent(AsyncAPIResource):
         return None
 
     async def trigger_task_from_action(self, conversation_id: str, action: str, action_request_id: str) -> dict:
-        path = f"agents/trigger"
+        path = "agents/trigger"
         body = {
             "agent_id": self.agent_id,
             "conversation_id": conversation_id,
@@ -506,7 +506,7 @@ class AsyncAgent(AsyncAPIResource):
         return await self._post(path, body=body, params=params, cast_to=dict)
 
     async def get_task_output_preview(self, conversation_id: str) -> Union[Task, bool]:
-        path = f"agents/conversations/studios/list"
+        path = "agents/conversations/studios/list"
         params = {
             "conversation_id": conversation_id,
             "agent_id": self.agent_id,

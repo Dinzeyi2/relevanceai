@@ -15,7 +15,7 @@ client = RelevanceAI()
 agent_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 my_agent = client.agents.retrieve_agent(agent_id=agent_id)
 
-message = dedent(f"""
+message = dedent("""
 Research the following company:        
 RelevanceAI relevanceai.com      
 """)
