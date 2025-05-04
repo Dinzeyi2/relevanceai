@@ -17,41 +17,35 @@ class TestTool:
     @pytest.fixture
     def tool(self, mock_client):
         """Fixture to create a Tool instance."""
-        metadata = {
-            "studio_id": "test-tool",
-            "title": "Test Tool",
-            "type": "regular"
-        }
-        return Tool(client=mock_client, **metadata)
+        return Tool(client=mock_client, tool_id="test-tool")
 
     def test_tool_init(self, tool):
         """Test initialization of the Tool class."""
         assert tool.tool_id == "test-tool"
-        assert tool.metadata.title == "Test Tool"
-        assert tool.metadata.type == "regular"
 
     def test_update(self, tool):
         """Test updating tool properties."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
-        tool._client.post = MagicMock(return_value=mock_response)
+        mock_response = {
+            "status": "success"
+        }
+        tool._post = MagicMock(return_value=mock_response)
 
         updates = {"title": "Updated Tool"}
         result = tool.update(updates)
 
-        tool._client.post.assert_called_once_with(
+        tool._post.assert_called_once_with(
             "studios/bulk_update",
             body={
                 "partial_update": True,
                 "updates": [{"title": "Updated Tool", "studio_id": "test-tool"}]
-            }
+            },
+            cast_to=dict
         )
         assert result == {"status": "success"}
 
     def test_trigger(self, tool):
         """Test triggering a tool."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
+        mock_response = {
             "output": {"result": "test output"},  
             "status": "complete",                
             "errors": [],                         
@@ -64,28 +58,27 @@ class TestTool:
 
         tool._post.assert_called_once_with(
             path=f"studios/{tool.tool_id}/trigger_limited",
-            body={"params": params, "project": tool._client.project}
+            body={"params": params, "project": tool._client.project},
+            cast_to=dict
         )
-        assert result.output == {"result": "test output"}
-        assert result.status.value == "complete" 
-        assert result.errors == []
-        assert result.executionTime == 1.23
+        assert result['output'] == {"result": "test output"}
+        assert result['status'] == "complete" 
+        assert result['errors'] == []
+        assert result['executionTime'] == 1.23
 
     def test_get_params_schema(self, tool):
         """Test getting params schema."""
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
+        mock_response = {
             "studio": {"params_schema": {"properties": {"test": "schema"}}}
         }
         tool._get = MagicMock(return_value=mock_response)
 
         result = tool.get_params_schema()
-        assert result == '{\n    "test": "schema"\n}'
+        assert result == {"test": "schema"}
 
     def test_update_metadata(self, tool):
         """Test updating tool metadata."""
-        get_response = MagicMock()
-        get_response.json.return_value = {
+        get_response = {
             "studio": {
                 "title": "Old Title",
                 "description": "Old Description",
@@ -94,8 +87,9 @@ class TestTool:
         }
         tool._get = MagicMock(return_value=get_response)
 
-        post_response = MagicMock()
-        post_response.json.return_value = {"status": "success"}
+        post_response = {
+            "status": "success"
+        }
         tool._post = MagicMock(return_value=post_response)
 
         result = tool.update_metadata(
@@ -114,9 +108,10 @@ class TestTool:
                     "public": True
                 }],
                 "partial_update": True
-            }
+            },
+            cast_to=dict
         )
-        assert result == {"status": "success"}
+        assert result['status'] == "success"
 
     def test_get_link(self, tool):
         """Test getting the web link for a tool."""
@@ -126,5 +121,5 @@ class TestTool:
 
     def test_repr(self, tool):
         """Test string representation of the tool."""
-        expected_repr = 'Tool(tool_id="test-tool", title="Test Tool")'
+        expected_repr = 'Tool(tool_id="test-tool")'
         assert repr(tool) == expected_repr

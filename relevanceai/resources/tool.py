@@ -1,72 +1,54 @@
 from __future__ import annotations
+from typing import List, Optional, Dict
 
 from .._client import RelevanceAI, AsyncRelevanceAI
 from .._resource import SyncAPIResource, AsyncAPIResource
-from ..types.tool import *
-from typing import List, Optional, Dict
-from ..types.params import *
-from ..types.transformations import * 
-import json
-
+from ..types.params import ParamsBase
+from ..types.transformations import TransformationBase
 
 class Tool(SyncAPIResource):
     _client: RelevanceAI
 
-    def __init__(self, client: RelevanceAI, **metadata):
+    def __init__(self, client: RelevanceAI, tool_id: str, **kwargs):
         super().__init__(client=client)
-        self.metadata = ToolType(**metadata)
-        self.tool_id = self.metadata.studio_id
+        self.tool_id = tool_id
 
-    def update(
-        self,
-        updates: dict,
-        partial_update: Optional[bool] = True,
-    ) -> dict:
+    def update(self, updates: dict, partial_update: bool = True) -> dict:
         path = "studios/bulk_update"
         body = {
             "partial_update": partial_update,
             "updates": [updates | {"studio_id": self.tool_id}],
         }
-        response = self._client.post(path, body=body)
-        return response.json()
+        return self._post(path, body=body, cast_to=dict)
 
-    def trigger(
-        self,
-        params: dict | None = None,
-    ):
+    def trigger(self, params: dict | None = None):
         path = f"studios/{self.tool_id}/trigger_limited"
         body = {"params": params, "project": self._client.project}
-        response = self._post(path=path, body=body)
-        return ToolOutput(**response.json())
+        return self._post(path=path, body=body, cast_to=dict)
 
     def get_params_schema(self) -> str:
-        response = self._get(f"studios/{self.tool_id}/get")
-        params_schema = response.json()["studio"]["params_schema"]["properties"]
-        return json.dumps(params_schema, indent=4)
+        response = self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        params_schema = response["studio"]["params_schema"]["properties"]
+        return params_schema
 
     def get_transformations_schema(self) -> str:
-        response = self._get(f"studios/{self.tool_id}/get")
-        steps_schema = response.json()["studio"]["transformations"]["steps"]
-        return json.dumps(steps_schema, indent=4)
+        response = self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        steps_schema = response["studio"]["transformations"]["steps"]
+        return steps_schema
     
     def update_metadata(
         self,
-        title: str = None,
-        description: str = None, 
-        public: bool = None, 
+        title: str | None = None,
+        description: str | None = None, 
+        public: bool | None = None, 
     ):
-        response = self._get(f"studios/{self.tool_id}/get")
-        current_metadata = {
-            "title": response.json()["studio"].get("title"),
-            "description": response.json()["studio"].get("description"),
-            "public": response.json()["studio"].get("public"),
-        }
+        response = self._get(f"studios/{self.tool_id}/get", cast_to=dict)
 
         updates = {
             "studio_id": self.tool_id,
-            "title": title if title is not None else current_metadata["title"],
-            "description": description if description is not None else current_metadata["description"],
-            "public": public if public is not None else current_metadata["public"],
+            "title": title or response["studio"].get("title"),
+            "description": description or response["studio"].get("description"),
+            "public": public or response["studio"].get("public"),
         }
 
         path = "studios/bulk_update"
@@ -74,13 +56,9 @@ class Tool(SyncAPIResource):
             "updates": [updates],
             "partial_update": True
         }
-        response = self._post(path, body=body)
-        return response.json()
+        return self._post(path, body=body, cast_to=dict)
 
-    def update_params(
-        self,
-        params: Dict[str, ParamsBase],
-    ) -> Tool:
+    def update_params(self, params: Dict[str, ParamsBase]) -> Tool:
         
         params_schema = {
             "properties": {},
@@ -116,16 +94,15 @@ class Tool(SyncAPIResource):
             "partial_update": True
         }
         
-        response = self._post(path, body=body)
-        return response.json()
+        return self._post(path, body=body, cast_to=dict)
         
     def update_transformations(
         self,
         transformations: List[TransformationBase],
     ) -> dict:
         
-        response = self._get(f"studios/{self.tool_id}/get")
-        current_state = response.json()["studio"].get("state_mapping", {})
+        response = self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        current_state = response["studio"].get("state_mapping", {})
 
         state_mapping = {
             **current_state, 
@@ -152,8 +129,7 @@ class Tool(SyncAPIResource):
             "partial_update": True
         }
         
-        response = self._post(path, body=body)
-        return response.json()
+        return self._post(path, body=body, cast_to=dict)
     
     def update_outputs(
         self, 
@@ -161,8 +137,8 @@ class Tool(SyncAPIResource):
         output_mapping: Optional[dict] = None,
         output_schema_properties: Optional[dict] = None,
     ) -> dict: 
-        response = self._get(f"studios/{self.tool_id}/get")
-        current_steps = response.json()["studio"].get("transformations", {}).get("steps", [])
+        response = self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        current_steps = response["studio"].get("transformations", {}).get("steps", [])
         
         transformations = {"steps": current_steps}
         transformations["output"] = output_mapping if not last_step else None
@@ -183,73 +159,60 @@ class Tool(SyncAPIResource):
             "partial_update": True
         }
 
-        response = self._post(path, body=body)
-        return response.json()
+        return self._post(path, body=body, cast_to=dict)
     
     def get_link(self):
         return f"https://app.relevanceai.com/agents/{self._client.region}/{self._client.project}/{self.tool_id}"
 
     def __repr__(self):
-        return f'Tool(tool_id="{self.tool_id}", title="{self.metadata.title}")'
+        return f'Tool(tool_id="{self.tool_id}")'
     
 class AsyncTool(AsyncAPIResource):
     _client: AsyncRelevanceAI
 
-    def __init__(self, client: AsyncRelevanceAI, **metadata):
+    def __init__(self, client: AsyncRelevanceAI, tool_id: str, **kwargs):
         super().__init__(client=client)
-        self.metadata = ToolType(**metadata)
-        self.tool_id = self.metadata.studio_id
+        self.tool_id = tool_id
 
-    async def update(
-        self,
-        updates: dict,
-        partial_update: Optional[bool] = True,
-    ) -> dict:
+
+    async def update(self, updates: dict, partial_update: Optional[bool] = True) -> dict:
         path = "studios/bulk_update"
         body = {
             "partial_update": partial_update,
             "updates": [updates | {"studio_id": self.tool_id}],
         }
-        response = await self._client.post(path, body=body)
-        return response.json()
+        response = await self._post(path, body=body, cast_to=dict)
+        return response
 
-    async def trigger(
-        self,
-        params: dict | None = None,
-    ):
+    async def trigger(self, params: dict | None = None):
         path = f"studios/{self.tool_id}/trigger_limited"
         body = {"params": params, "project": self._client.project}
-        response = await self._post(path=path, body=body)
-        return ToolOutput(**response.json())
+        response = await self._post(path=path, body=body, cast_to=dict)
+        return response
 
-    async def get_params_schema(self) -> str:
-        response = await self._get(f"studios/{self.tool_id}/get")
-        params_schema = response.json()["studio"]["params_schema"]["properties"]
-        return json.dumps(params_schema, indent=4)
+    async def get_params_schema(self) -> dict:
+        response = await self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        params_schema = response["studio"]["params_schema"]["properties"]
+        return params_schema
 
-    async def get_transformations_schema(self) -> str:
-        response = await self._get(f"studios/{self.tool_id}/get")
-        steps_schema = response.json()["studio"]["transformations"]["steps"]
-        return json.dumps(steps_schema, indent=4)
+    async def get_transformations_schema(self) -> dict:
+        response = await self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        steps_schema = response["studio"]["transformations"]["steps"]
+        return steps_schema
     
     async def update_metadata(
         self,
-        title: str = None,
-        description: str = None, 
-        public: bool = None, 
+        title: str | None = None,
+        description: str | None = None, 
+        public: bool | None = None, 
     ):
-        response = await self._get(f"studios/{self.tool_id}/get")
-        current_metadata = {
-            "title": response.json()["studio"].get("title"),
-            "description": response.json()["studio"].get("description"),
-            "public": response.json()["studio"].get("public"),
-        }
+        response = await self._get(f"studios/{self.tool_id}/get", cast_to=dict)
 
         updates = {
             "studio_id": self.tool_id,
-            "title": title if title is not None else current_metadata["title"],
-            "description": description if description is not None else current_metadata["description"],
-            "public": public if public is not None else current_metadata["public"],
+            "title": title | response["studio"].get("title"),
+            "description": description | response["studio"].get("description"),
+            "public": public | response["studio"].get("public"),
         }
 
         path = "studios/bulk_update"
@@ -257,13 +220,10 @@ class AsyncTool(AsyncAPIResource):
             "updates": [updates],
             "partial_update": True
         }
-        response = await self._post(path, body=body)
-        return response.json()
+        response = await self._post(path, body=body, cast_to=dict)
+        return response
 
-    async def update_params(
-        self,
-        params: Dict[str, ParamsBase],
-    ) -> Tool:
+    async def update_params(self, params: Dict[str, ParamsBase]) -> dict:
         params_schema = {
             "properties": {},
             "required": [],
@@ -298,15 +258,15 @@ class AsyncTool(AsyncAPIResource):
             "partial_update": True
         }
         
-        response = await self._post(path, body=body)
-        return response.json()
+        response = await self._post(path, body=body, cast_to=dict)
+        return response
         
     async def update_transformations(
         self,
         transformations: List[TransformationBase],
     ) -> dict:
-        response = await self._get(f"studios/{self.tool_id}/get")
-        current_state = response.json()["studio"].get("state_mapping", {})
+        response = await self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        current_state = response["studio"].get("state_mapping", {})
 
         state_mapping = {
             **current_state, 
@@ -333,8 +293,8 @@ class AsyncTool(AsyncAPIResource):
             "partial_update": True
         }
         
-        response = await self._post(path, body=body)
-        return response.json()
+        response = await self._post(path, body=body, cast_to=dict)
+        return response
     
     async def update_outputs(
         self, 
@@ -342,8 +302,8 @@ class AsyncTool(AsyncAPIResource):
         output_mapping: Optional[dict] = None,
         output_schema_properties: Optional[dict] = None,
     ) -> dict:
-        response = await self._get(f"studios/{self.tool_id}/get")
-        current_steps = response.json()["studio"].get("transformations", {}).get("steps", [])
+        response = await self._get(f"studios/{self.tool_id}/get", cast_to=dict)
+        current_steps = response["studio"].get("transformations", {}).get("steps", [])
         
         transformations = {"steps": current_steps}
         transformations["output"] = output_mapping if not last_step else None
@@ -364,11 +324,11 @@ class AsyncTool(AsyncAPIResource):
             "partial_update": True
         }
 
-        response = await self._post(path, body=body)
-        return response.json()
+        response = await self._post(path, body=body, cast_to=dict)
+        return response
 
     def get_link(self):
         return f"https://app.relevanceai.com/agents/{self._client.region}/{self._client.project}/{self.tool_id}"
 
     def __repr__(self):
-        return f'AsyncTool(tool_id="{self.tool_id}", title="{self.metadata.title}")'
+        return f'AsyncTool(tool_id="{self.tool_id}")'
